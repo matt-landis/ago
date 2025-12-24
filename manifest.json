@@ -1,6 +1,6 @@
 {
-  "name": "Nearby Wikipedia Reader",
-  "short_name": "Wiki Nearby",
+  "name": "Ago - Whats Near",
+  "short_name": "Ago",
   "description": "Hear summaries of Wikipedia places near you",
   "start_url": ".",
   "display": "standalone",
@@ -18,4 +18,5 @@
       "type": "image/png"
     }
   ]
+
 }
