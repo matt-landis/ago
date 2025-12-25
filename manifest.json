@@ -1,7 +1,7 @@
 {
-  "name": "Ago - Whats Near",
-  "short_name": "Ago",
-  "description": "Hear summaries of Wikipedia places near you",
+  "name": "AhGo! Your Guide to Whats Nearby",
+  "short_name": "AhGo!",
+  "description": "Your guide to whats near you",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -20,3 +20,4 @@
   ]
 
 }
+
