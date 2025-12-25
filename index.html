@@ -3,26 +3,138 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AhGo! Guide</title>
+  <title>Nearby Wikipedia TTS</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <style>
-    body { font-family: system-ui, sans-serif; padding: 20px; text-align: center; max-width: 600px; margin: 0 auto; }
-    button { padding: 12px 24px; font-size: 18px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; }
+    body { font-family: system-ui, sans-serif; padding: 20px; text-align: center; max-width: 600px; margin: 0 auto; position: relative; transition: background-color 0.3s, color 0.3s; }
+    button { padding: 12px 24px; font-size: 18px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
     #play { background: #007bff; color: white; }
     #pauseResume { background: #ffc107; color: black; }
     #stop { background: #dc3545; color: white; }
     #status { margin: 30px 0; font-size: 20px; min-height: 60px; }
     .hidden { display: none; }
     ul { list-style: none; padding: 0; }
-    li { margin: 15px 0; border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
+    li { margin: 15px 0; border: 1px solid #ddd; padding: 10px; border-radius: 8px; transition: background-color 0.3s, border-color 0.3s; }
     .place-play { background: #28a745; color: white; font-size: 16px; padding: 8px 16px; }
     #controls { margin-top: 20px; }
-    label { font-size: 18px; display: block; margin: 20px 0; }
+
+    /* Settings Gear Button - clean outline SVG, perfectly centered */
+    #settingsBtn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: transparent;
+      border: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #555;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+
+    #settingsBtn:hover {
+      background: rgba(0,0,0,0.08);
+    }
+
+    #settingsBtn svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      position: relative;
+      transition: background-color 0.3s;
+    }
+    .close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 28px;
+      cursor: pointer;
+      color: #aaa;
+    }
+    .close:hover { color: #000; }
+    .setting {
+      margin: 20px 0;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin: 12px 0 8px;
+      font-weight: bold;
+    }
+    select, input[type="checkbox"] {
+      margin-right: 8px;
+      transform: scale(1.2);
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    /* Dark Mode Styles */
+    body.dark {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    body.dark li {
+      background-color: #1e1e1e;
+      border-color: #333;
+    }
+    body.dark #settingsBtn {
+      color: #ccc;
+    }
+    body.dark #settingsBtn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    body.dark .modal-content {
+      background: #1e1e1e;
+      color: #e0e0e0;
+    }
+    body.dark button:not(#play, #pauseResume, #stop, .place-play) {
+      background: #333;
+      color: #e0e0e0;
+    }
+    body.dark .close { color: #aaa; }
+    body.dark .close:hover { color: #fff; }
+    body.dark select {
+      background: #333;
+      color: #e0e0e0;
+      border: 1px solid #555;
+    }
   </style>
 </head>
 <body>
-  <h1>AhGo! Your Guide to Whats Nearby</h1>
+  <!-- New clean outline gear button -->
+  <button id="settingsBtn" aria-label="Settings">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
+
+  <h1>Nearby Wikipedia Reader</h1>
   <div id="status">Getting your location...</div>
   <ul id="placesList"></ul>
   <div id="controls" class="hidden">
@@ -30,15 +142,49 @@
     <button id="pauseResume">Pause</button>
     <button id="stop">Stop</button>
   </div>
-  <label>
-    <input type="checkbox" id="autoToggle" />
-    Auto-check every 30 seconds
-  </label>
+
   <button id="retry">Check Now</button>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Settings</h2>
+
+      <div class="setting">
+        <label for="units">Distance Units</label>
+        <select id="units">
+          <option value="metric">Metric (meters/km)</option>
+          <option value="imperial">Imperial (yards/miles)</option>
+        </select>
+      </div>
+
+      <div class="setting">
+        <label>
+          <input type="checkbox" id="autoCheck" />
+          Automatically recheck every 30 seconds
+        </label>
+      </div>
+
+      <div class="setting">
+        <label>
+          <input type="checkbox" id="darkMode" />
+          Dark Mode
+        </label>
+      </div>
+
+      <div class="setting">
+        <label for="voiceSelect">Voice</label>
+        <select id="voiceSelect">
+          <option value="">Default Voice</option>
+          <!-- Options populated by JavaScript -->
+        </select>
+      </div>
+
+      <button id="saveSettings">Save & Close</button>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
-
 </html>
-
-
