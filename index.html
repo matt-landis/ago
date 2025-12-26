@@ -7,27 +7,50 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <style>
-    body { font-family: system-ui, sans-serif; padding: 20px; text-align: center; max-width: 600px; margin: 0 auto; position: relative; transition: background-color 0.3s, color 0.3s; }
-    button { padding: 12px 24px; font-size: 18px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
-    #play { background: #007bff; color: white; }
-    #pauseResume { background: #ffc107; color: black; }
-    #stop { background: #dc3545; color: white; }
-    #status { margin: 30px 0; font-size: 20px; min-height: 60px; }
-    .hidden { display: none; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 15px 0; border: 1px solid #ddd; padding: 10px; border-radius: 8px; transition: background-color 0.3s, border-color 0.3s; }
-    .place-play { background: #28a745; color: white; font-size: 16px; padding: 8px 16px; }
-    #controls { margin-top: 20px; }
+    body { 
+      font-family: system-ui, sans-serif; 
+      padding: 20px; 
+      text-align: center; 
+      max-width: 600px; 
+      margin: 0 auto; 
+      transition: background-color 0.3s, color 0.3s; 
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
 
-    /* Settings Gear Button - clean outline SVG, perfectly centered */
+    /* 30px tall fixed top bar */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      background-color: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 1000;
+      font-size: 15px;
+      font-weight: 600;
+      border-bottom: 1px solid #ddd;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    .header .title {
+      margin: 0;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Settings button adjusted for 30px bar */
     #settingsBtn {
-      position: absolute;
-      top: 12px;
-      right: 12px;
       background: transparent;
       border: none;
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -43,15 +66,30 @@
     }
 
     #settingsBtn svg {
-      width: 28px;
-      height: 28px;
+      width: 20px;
+      height: 20px;
     }
 
-    /* Modal */
+    /* Prevent content from being hidden under the 30px header */
+    body {
+      padding-top: 50px !important; /* 30px header + 20px space */
+    }
+
+    button { padding: 12px 24px; font-size: 18px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
+    #pauseResume { background: #ffc107; color: black; }
+    #stop { background: #dc3545; color: white; }
+    #status { margin: 20px 0; font-size: 20px; min-height: 60px; }
+    .hidden { display: none; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { margin: 15px 0; border: 1px solid #ddd; padding: 10px; border-radius: 8px; transition: background-color 0.3s, border-color 0.3s; }
+    .place-play { background: #28a745; color: white; font-size: 16px; padding: 8px 16px; }
+    #controls { margin-top: 20px; }
+
+    /* Modal - ensure it appears on top */
     .modal {
       display: none;
       position: fixed;
-      z-index: 1000;
+      z-index: 2000;
       left: 0; top: 0;
       width: 100%; height: 100%;
       background-color: rgba(0,0,0,0.5);
@@ -76,15 +114,8 @@
       color: #aaa;
     }
     .close:hover { color: #000; }
-    .setting {
-      margin: 20px 0;
-      text-align: left;
-    }
-    label {
-      display: block;
-      margin: 12px 0 8px;
-      font-weight: bold;
-    }
+    .setting { margin: 20px 0; text-align: left; }
+    label { display: block; margin: 12px 0 8px; font-weight: bold; }
     select, input[type="checkbox"] {
       margin-right: 8px;
       transform: scale(1.2);
@@ -93,10 +124,13 @@
       font-size: 16px;
     }
 
-    /* Dark Mode Styles */
+    /* Dark Mode */
     body.dark {
       background-color: #121212;
       color: #e0e0e0;
+    }
+    body.dark .header {
+      border-bottom-color: #333;
     }
     body.dark li {
       background-color: #1e1e1e;
@@ -112,10 +146,6 @@
       background: #1e1e1e;
       color: #e0e0e0;
     }
-    body.dark button:not(#play, #pauseResume, #stop, .place-play) {
-      background: #333;
-      color: #e0e0e0;
-    }
     body.dark .close { color: #aaa; }
     body.dark .close:hover { color: #fff; }
     body.dark select {
@@ -126,15 +156,17 @@
   </style>
 </head>
 <body>
-  <!-- New clean outline gear button -->
-  <button id="settingsBtn" aria-label="Settings">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-    </svg>
-  </button>
+  <!-- 30px Top Bar -->
+  <div class="header">
+    <div class="title">Nearby Wikipedia Reader</div>
+    <button id="settingsBtn" aria-label="Settings">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </div>
 
-  <h1>Nearby Wikipedia Reader</h1>
   <div id="status">Getting your location...</div>
   <ul id="placesList"></ul>
   <div id="controls" class="hidden">
